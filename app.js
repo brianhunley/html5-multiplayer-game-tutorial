@@ -18,6 +18,7 @@ const http = require('http');
 const path = require('path');
 const socketIO = require('socket.io');
 const gameloop = require('node-gameloop');
+// const pusage = require('pidusage');
 
 const publicPath = path.join(__dirname, 'client');
 const port = process.env.PORT || 2000;
@@ -93,34 +94,7 @@ io.sockets.on('connection', (socket) => {
   const player = Player(socket.id);
   playerList[socket.id] = player;
 
-  /*
-  Object.entries(playerList).forEach((p) => {
-    const playerId = p[0];
-    console.log(playerList[playerId].id);
-  });
-  */
-
-  /*
-  Object.entries(socketList).forEach((s) => {
-    console.log(s);
-    const socketId = s[0];
-    console.log(socketId);
-  });
-  */
-
   console.log(`client connected with socket id: ${player.id}, number: ${player.number}`);
-
-  /*
-  socket.on('happy', (data) => {
-    console.log(`received client "happy" message, data: ${data.reason}`);
-  });
-  */
-
-  /*
-  socket.emit('serverMsg', {
-    msg: 'Hello, from the server!',
-  });
-  */
 
   socket.on('disconnect', () => {
     console.log(`client disconnected with socket id: ${socket.id}`);
@@ -142,14 +116,7 @@ io.sockets.on('connection', (socket) => {
   });
 });
 
-// console.log(Object.entries(playerList));
-
 /*
-Object.entries(playerList).forEach((player) => {
-  console.log(player);
-});
-*/
-
 setInterval(() => {
   const pack = [];
 
@@ -171,3 +138,53 @@ setInterval(() => {
     socketList[socketId].emit('newPosition', pack);
   });
 }, 1000 / 25);
+*/
+
+// start the loop at 30 fps (1000/30ms per frame) and grab its id
+// let frameCount = 0;
+gameloop.setGameLoop((delta) => {
+  // `delta` is the delta time from the last frame
+  // console.log('Hi there! (frame=%s, delta=%s)', frameCount += 1, delta);
+
+  const pack = [];
+
+  Object.entries(playerList).forEach((playerObj) => {
+    const playerId = playerObj[0];
+    // console.log(playerList[playerId].id);
+    const player = playerList[playerId];
+    player.updatePosition();
+
+    pack.push({
+      x: player.x,
+      y: player.y,
+      number: player.number,
+    });
+  });
+
+  Object.entries(socketList).forEach((socket) => {
+    const socketId = socket[0];
+    socketList[socketId].emit('newPosition', pack);
+  });
+}, 1000 / 30);
+
+/*
+gameloop.setGameLoop(() => {
+  pusage.stat(process.pid, (err, stat) => {
+    // expect(err).to.be.null
+    // expect(stat).to.be.an('object')
+    // expect(stat).to.have.property('cpu')
+    // expect(stat).to.have.property('memory')
+
+    console.log('Pcpu: %s', stat.cpu);
+    console.log('Mem: %s', stat.memory); // those are bytes
+  });
+}, 1000);
+*/
+
+// stop the loop 2 seconds later
+/*
+setTimeout(() => {
+  console.log('5000ms passed, stopping the game loop');
+  gameloop.clearGameLoop(id);
+}, 5000);
+*/
